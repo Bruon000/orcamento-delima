@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#0d1118" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Teleprompter DELIMA · Gravar grátis</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0c1118;--panel:#19222e;--text:#f7f9fe;--muted:#a5b0c0;--line:#344153;--acc:#72dbc5}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100dvh}
+    button,input,textarea{font:inherit} button{cursor:pointer;touch-action:manipulation}
+    #setup{padding:calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 25px);max-width:700px;margin:auto}
+    .eyebrow{font-size:12px;color:var(--acc);letter-spacing:.13em;font-weight:800}.logo{font-size:27px;letter-spacing:-.035em;font-weight:800;margin:8px 0 5px}.sub{color:var(--muted);line-height:1.45;font-size:14px;margin-bottom:24px}
+    label{display:block;margin:17px 0 7px;font-weight:650;font-size:14px}.field{background:var(--panel);border:1px solid var(--line);border-radius:13px;color:white;width:100%;outline:none;padding:13px;font-size:16px}
+    textarea.field{height:min(40dvh,280px);resize:vertical;line-height:1.48}.row{display:flex;gap:12px;align-items:center}.col{flex:1;min-width:0}.range{width:100%;accent-color:var(--acc)}.small{color:var(--muted);font-size:12px;line-height:1.5}
+    .primary{background:var(--acc);color:#042820;border:0;border-radius:13px;padding:15px 19px;font-weight:800;width:100%;margin-top:19px;font-size:16px}
+    .secondary{background:#202b39;color:white;border:1px solid var(--line);padding:11px 13px;border-radius:11px;font-weight:650}
+    #stage{display:none;position:fixed;inset:0;background:black;overflow:hidden}
+    #camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#070707}
+    .scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.69),rgba(0,0,0,.01) 44%,rgba(0,0,0,.05) 63%,rgba(0,0,0,.78));pointer-events:none}
+    .top{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 16px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:2}
+    .pill{background:rgba(12,16,22,.75);backdrop-filter:blur(10px);padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid #ffffff30}
+    .prompter{position:absolute;left:5%;width:90%;top:16%;height:36%;overflow:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent,black 15%,black 80%,transparent);mask-image:linear-gradient(to bottom,transparent,black 15%,black 80%,transparent);border-radius:15px;background:rgba(0,0,0,.49);z-index:2}
+    .prompter::-webkit-scrollbar{display:none}
+    #words{white-space:pre-wrap;font-size:27px;font-weight:750;line-height:1.42;text-align:center;letter-spacing:-.025em;padding:13vh 12px 25vh;text-shadow:0 2px 4px #000}
+    .hint{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 180px);text-align:center;color:#dedfe5;font-size:12px;z-index:2;text-shadow:0 1px 3px #000}
+    .bottom{position:absolute;bottom:0;left:0;right:0;padding:14px 16px calc(env(safe-area-inset-bottom) + 17px);background:linear-gradient(transparent,rgba(0,0,0,.90) 15%);z-index:2}
+    .toolbar{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+    .toolbar button{font-size:13px;background:rgba(45,53,69,.88);color:white;border:1px solid #ffffff25;border-radius:10px;padding:10px 12px}
+    #record{height:62px;width:62px;border-radius:50%;border:5px solid #fff;background:#fc434e;box-shadow:0 0 0 5px #ffffff32;display:block;margin:auto}
+    #record.recording{border-radius:15px;background:#ff4a55;border-width:17px;background-clip:padding-box}
+    #countdown{display:none;position:absolute;inset:0;z-index:5;background:#0009;align-items:center;justify-content:center;font-size:100px;font-weight:900}
+    #result{display:none;position:fixed;inset:0;background:#101620;z-index:10;overflow:auto;padding:calc(env(safe-area-inset-top) + 20px) 16px 40px;text-align:center}
+    #playback{width:100%;max-width:350px;max-height:58dvh;border-radius:13px;background:#000;margin:10px 0}
+    #status{margin:15px 0;color:var(--muted);font-size:13px;line-height:1.5}
+    #error{display:none;padding:11px 13px;border-radius:10px;background:#471c25;color:#ffe4e8;font-size:13px;margin:12px 0}
+    @media (orientation:landscape){.prompter{height:40%;top:17%}#words{padding-top:12vh}}
+  </style>
+</head>
+<body>
+  <main id="setup">
+    <div class="eyebrow">100% GRATUITO · SEM CADASTRO</div>
+    <div class="logo">DELIMA · Teleprompter</div>
+    <div class="sub">Leia o roteiro enquanto grava com a câmera frontal e o microfone do próprio iPhone. O texto aparece apenas para você, não fica no vídeo.</div>
+    <label for="script">Seu roteiro</label>
+    <textarea id="script" class="field" spellcheck="true"></textarea>
+    <div class="row">
+      <div class="col"><label for="speed">Velocidade <span id="speedLabel">27</span> px/s</label><input class="range" type="range" id="speed" min="8" max="65" step="1" value="27"/></div>
+      <div class="col"><label for="font">Letra <span id="fontLabel">27</span> px</label><input class="range" type="range" id="font" min="18" max="40" step="1" value="27"/></div>
+    </div>
+    <p class="small">Ajuste a velocidade durante o ensaio. Ao iniciar a gravação, o texto rolará depois de uma contagem de 3 segundos.</p>
+    <div id="error" role="alert"></div>
+    <button id="open" class="primary">Abrir câmera e ensaiar</button>
+    <p class="small">🔒 A imagem e o áudio ficam no seu aparelho. O site não envia suas gravações para nenhum servidor. Necessário abrir por HTTPS no Safari e autorizar câmera/microfone.</p>
+  </main>
+  <section id="stage" aria-label="Câmera e teleprompter">
+    <video id="camera" muted playsinline autoplay></video>
+    <div class="scrim"></div>
+    <div class="top"><span id="clock" class="pill">ENSAIO</span><button class="secondary" id="back">Editar roteiro</button></div>
+    <div class="prompter" id="scroll"><div id="words"></div></div>
+    <div class="hint" id="hint">Enquadre o rosto e toque no botão vermelho para gravar</div>
+    <div class="bottom">
+      <div class="toolbar">
+        <button id="slower">− Lento</button><button id="pause">▶ Iniciar texto</button><button id="faster">+ Rápido</button><button id="restart">↺ Reiniciar texto</button>
+      </div>
+      <button id="record" aria-label="Iniciar gravação"></button>
+    </div>
+    <div id="countdown">3</div>
+  </section>
+  <section id="result" aria-label="Vídeo gravado">
+    <div class="eyebrow">GRAVAÇÃO FINALIZADA</div><h2>Seu vídeo está pronto para revisar</h2>
+    <video id="playback" playsinline controls></video>
+    <div class="small">Você pode ouvir e conferir a duração antes de salvar.</div>
+    <button id="share" class="primary">Compartilhar / Salvar no iPhone</button>
+    <a id="download" class="secondary" style="display:block;text-decoration:none;margin-top:12px" download="DELIMA_teste.mp4">Baixar vídeo</a>
+    <button id="again" class="secondary" style="width:100%;margin-top:12px">Gravar novamente</button>
+    <div id="status"></div>
+  </section>
+<script>
+'use strict';
+const defaultScript = `Já percebeu que, quando você começa a correr atrás de uma vida melhor, algumas pessoas mudam o jeito de olhar pra você?
+
+No começo, enquanto é só uma ideia, parece que ninguém leva a sério. Você fala que vai estudar, abrir um negócio, mudar de vida, e logo escuta: “Isso não vai dar certo.” Às vezes, de um amigo. Às vezes, até de alguém da família.
+
+Eu penso assim: nem toda crítica é inveja. Tem gente que se preocupa de verdade e pode enxergar um risco que você ainda não viu. Mas existe uma diferença enorme entre quem te alerta para ajudar e quem diminui seus sonhos toda vez que você conta um plano.
+
+Quando você começa a melhorar, essa diferença aparece. Algumas pessoas olham seu crescimento com respeito. Outras parecem incomodadas, como se você tivesse a obrigação de continuar no mesmo lugar.
+
+E sabe o que eu penso que você deve fazer? Parar de dividir seus projetos com quem só joga negatividade em cima deles. Não precisa discutir, brigar nem tentar convencer ninguém. Continue tratando as pessoas com respeito, mas aprenda a escolher com quem compartilha seus próximos passos.
+
+Porque o seu propósito não pode depender da aprovação dos outros. Ele precisa de foco, coragem, trabalho e vontade de aprender, principalmente quando as coisas ficam difíceis.
+
+E, se você acredita em Deus, fortaleça essa fé. Ore, faça a sua parte, estude, trabalhe e não desista só porque alguém duvidou de você. Nem tudo vai acontecer no seu tempo, mas isso não significa que você precisa abandonar seus sonhos.
+
+Lembre disso: você não controla o que falam de você. Mas controla a decisão de continuar caminhando.
+
+Nem todo mundo precisa saber aonde você quer chegar.`;
+const $=id=>document.getElementById(id);
+let stream=null,recorder=null,chunks=[],recording=false,rolling=false,raf=0,last=0,startAt=0,timer=null,videoBlob=null,videoFile=null,url=null;
+$('script').value=defaultScript;
+const getSpeed=()=>Number($('speed').value);
+$('speed').oninput=()=>$('speedLabel').textContent=$('speed').value;
+$('font').oninput=()=>{$('fontLabel').textContent=$('font').value;$('words').style.fontSize=$('font').value+'px'};
+function fail(msg){$('error').textContent=msg;$('error').style.display='block';$('status').textContent=msg;}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} $('camera').srcObject=null;}
+async function openCamera(){
+  $('error').style.display='none';
+  if(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){fail('A câmera precisa de um site HTTPS aberto no Safari. Abra pelo GitHub Pages, não como arquivo salvo no app Arquivos.');return;}
+  if(!window.MediaRecorder){fail('Este Safari não oferece gravação pelo navegador. Atualize o iOS/Safari e tente de novo.');return;}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1080},height:{ideal:1920},frameRate:{ideal:30,max:30}},audio:{echoCancellation:true,noiseSuppression:true}});
+    $('camera').srcObject=stream; await $('camera').play();
+    $('words').textContent=$('script').value.trim()||defaultScript;
+    $('words').style.fontSize=$('font').value+'px';$('scroll').scrollTop=0;
+    $('setup').style.display='none';$('stage').style.display='block';$('result').style.display='none';
+    $('hint').textContent='Enquadre o rosto e toque no botão vermelho para gravar';
+  }catch(e){fail('Não foi possível abrir a câmera/microfone ('+e.name+'). No Safari, permita Câmera e Microfone nas permissões do site e tente novamente.');}
+}
+$('open').onclick=openCamera;
+function frame(now){if(!rolling)return;if(!last)last=now; const dt=Math.min((now-last)/1000,.10);last=now;$('scroll').scrollTop+=getSpeed()*dt;raf=requestAnimationFrame(frame);}
+function startRoll(){if(rolling)return;rolling=true;last=0;raf=requestAnimationFrame(frame);$('pause').textContent='⏸ Pausar texto';}
+function stopRoll(){rolling=false;cancelAnimationFrame(raf);$('pause').textContent='▶ Continuar texto';}
+$('pause').onclick=()=>rolling?stopRoll():startRoll();
+$('slower').onclick=()=>{$('speed').value=Math.max(8,getSpeed()-4);$('speed').oninput()};
+$('faster').onclick=()=>{$('speed').value=Math.min(65,getSpeed()+4);$('speed').oninput()};
+$('restart').onclick=()=>{$('scroll').scrollTop=0;last=0;};
+$('back').onclick=()=>{if(recording)return;stopRoll();stopCamera();$('setup').style.display='block';$('stage').style.display='none';};
+const sleep=t=>new Promise(r=>setTimeout(r,t));
+async function countdown(){const el=$('countdown');el.style.display='flex';for(let n=3;n>0;n--){el.textContent=n;await sleep(1000);}el.style.display='none';}
+function chooseMime(){for(const m of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm'])if(MediaRecorder.isTypeSupported(m))return m;return '';}
+function clockText(){const sec=Math.floor((Date.now()-startAt)/1000);$('clock').textContent='🔴 '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+async function beginRecording(){
+  if(!stream)return;const mime=chooseMime();
+  if(!mime){alert('O Safari não informou um formato de gravação compatível. Atualize o iPhone e tente novamente.');return;}
+  try{
+    recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:4500000,audioBitsPerSecond:128000});
+    chunks=[];
+    recorder.ondataavailable=e=>{if(e.data && e.data.size)chunks.push(e.data)};
+    recorder.onerror=e=>{console.error(e);$('hint').textContent='Falha na gravação. Tente novamente.';};
+    recorder.onstop=showResult;
+    $('record').disabled=true;
+    await countdown();
+    if(!stream){$('record').disabled=false;return;}
+    $('scroll').scrollTop=0;stopRoll();
+    recorder.start(1000);recording=true;startAt=Date.now();
+    $('record').classList.add('recording');$('record').setAttribute('aria-label','Encerrar gravação');$('record').disabled=false;
+    $('back').style.display='none';$('hint').textContent='Leia naturalmente olhando perto da lente; o texto não aparece no vídeo';
+    clockText();timer=setInterval(clockText,1000);startRoll();
+  }catch(e){$('record').disabled=false;alert('Falha ao iniciar a gravação: '+e.message);}
+}
+function endRecording(){if(!recording)return;recording=false;clearInterval(timer);stopRoll();$('record').classList.remove('recording');$('back').style.display='';$('record').disabled=true;try{if(recorder?.state!=='inactive')recorder.stop();}catch(e){alert('Erro ao parar: '+e.message)} }
+$('record').onclick=()=>recording?endRecording():beginRecording();
+function showResult(){
+  const mime=recorder.mimeType||'video/mp4'; videoBlob=new Blob(chunks,{type:mime}); chunks=[]; if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(videoBlob);
+  const ext=mime.includes('mp4')?'mp4':'webm',name='DELIMA_episodio_02_'+new Date().toISOString().slice(0,10)+'.'+ext;
+  videoFile=new File([videoBlob],name,{type:mime});
+  $('playback').src=url;$('download').href=url;$('download').download=name;
+  $('stage').style.display='none';$('result').style.display='block';$('record').disabled=false;
+  $('status').textContent='Arquivo '+ext.toUpperCase()+' pronto. Toque em Compartilhar para salvar em Arquivos ou Fotos (se disponível), ou em Baixar vídeo.';
+  stopCamera();
+}
+$('share').onclick=async()=>{
+  if(!videoFile)return;
+  try{
+    if(navigator.canShare?.({files:[videoFile]})){await navigator.share({files:[videoFile],title:'Vídeo DELIMA'});return;}
+    $('download').click();
+  }catch(e){if(e.name!=='AbortError'){$('status').textContent='Compartilhamento não disponível. Use o botão Baixar vídeo abaixo.';}}
+};
+$('again').onclick=()=>{$('result').style.display='none';$('setup').style.display='block';$('clock').textContent='ENSAIO';};
+window.addEventListener('pagehide',()=>{if(!recording)stopCamera()});
+</script>
+</body>
+</html>
