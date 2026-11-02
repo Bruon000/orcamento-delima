@@ -55,7 +55,7 @@ input[type=range]{width:100%;accent-color:var(--mint);margin:9px 0 4px;min-heigh
 #scroll{position:absolute;z-index:6;top:var(--textTop);height:var(--textHeight);left:3%;width:94%;overflow:auto;border-radius:16px;background:rgba(0,0,0,var(--textOpacity));overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,black 12%,black 88%,transparent);mask-image:linear-gradient(transparent,black 12%,black 88%,transparent)}
 #scroll::-webkit-scrollbar{display:none}
 #words{font-weight:760;font-size:var(--fontSize);line-height:1.35;text-align:center;letter-spacing:-.018em;white-space:pre-wrap;overflow-wrap:anywhere;padding:9vh 10px 25vh;text-shadow:0 2px 5px #000,0 0 10px #000}
-.guide{position:absolute;left:7%;right:7%;top:calc(var(--textTop) + var(--textHeight)*.49);height:2px;background:linear-gradient(90deg,transparent,#86efd494,transparent);z-index:7;pointer-events:none;opacity:.62}
+.guide{position:absolute;left:7%;right:7%;top:35%;height:2px;background:linear-gradient(90deg,transparent,#86efd494,transparent);z-index:7;pointer-events:none;opacity:.62}
 #hint{position:absolute;z-index:7;bottom:calc(env(safe-area-inset-bottom) + 164px);left:10px;right:10px;text-align:center;font-size:12px;color:#fff;text-shadow:0 1px 5px #000}
 .bottom{position:absolute;z-index:8;inset:auto 0 0;padding:16px 14px calc(env(safe-area-inset-bottom) + 15px);background:linear-gradient(transparent,#050a12 21%);display:flex;flex-direction:column;align-items:center;gap:12px}
 .quick{display:flex;width:100%;justify-content:center;align-items:center;gap:9px}
@@ -153,6 +153,7 @@ function sync(){
  document.documentElement.style.setProperty('--fontSize',$('font').value+'px');
  document.documentElement.style.setProperty('--textTop',$('pos').value+'%');
  document.documentElement.style.setProperty('--textHeight',$('height').value+'%');
+ document.querySelector('.guide').style.top=(Number($('pos').value)+Number($('height').value)*.49)+'%';
  document.documentElement.style.setProperty('--textOpacity',(Number($('opacity').value)/100).toFixed(2));
  for(const id of ['speed','font','pos','height','opacity'])safeSet('delima_v2_'+id,$(id).value);
 }
